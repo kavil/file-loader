@@ -1,5 +1,7 @@
 import path from 'path';
 
+import fs from 'fs';
+
 import loaderUtils from 'loader-utils';
 import validateOptions from 'schema-utils';
 
@@ -9,18 +11,29 @@ export default function loader(content) {
   const options = loaderUtils.getOptions(this) || {};
 
   validateOptions(schema, options, {
-    name: 'File Loader',
+    name: 'File edition Loader',
     baseDataPath: 'options',
   });
 
   const context = options.context || this.rootContext;
+
+  let newContent = content;
+  try {
+    newContent = fs.readFileSync(
+      this.resourcePath.replace(
+        new RegExp(options.assetsName),
+        `${options.assetsName}\\${options.edition}`
+      )
+    );
+    // eslint-disable-next-line no-empty
+  } catch (e) {}
 
   const url = loaderUtils.interpolateName(
     this,
     options.name || '[contenthash].[ext]',
     {
       context,
-      content,
+      newContent,
       regExp: options.regExp,
     }
   );
@@ -56,7 +69,7 @@ export default function loader(content) {
   }
 
   if (typeof options.emitFile === 'undefined' || options.emitFile) {
-    this.emitFile(outputPath, content);
+    this.emitFile(outputPath, newContent);
   }
 
   const esModule =
